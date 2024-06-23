@@ -1,34 +1,35 @@
-version:2 jobs:
-one:
-docker:
-- image: cimg/ruby:3.0.2
-steps:
-- checkout
-- run: echo "A first hello"
-- run: mkdir -p my_workspace
-- run: echo "Trying out workspaces" > my_workspace/echo-output
-- persist_to_workspace:
-root: my_workspace
-paths:
-- echo-output
-two:
-docker:
-- image: cimg/ruby:3.0.2
-steps:
-- checkout
-- attach_workspace: 
-at:
-my_workspace
-- run: |
-if [[ $(cat my_workspace/echo-output) == "Trying out workspaces"]]; then
-echo "It worked!";
-workflows:
 version: 2
-one_and_two:
 jobs:
-- one
-- two:
-requires:
-- one
--
-- run: echo "A more familiar hi"
+  one:
+    docker:
+      - image: cimg/ruby:3.0.2
+    steps:
+      - checkout
+      - run: echo "A first hello"
+      - run: mkdir -p my_workspace
+      - run: echo "Trying out workspaces" > my_workspace/echo-output
+      - persist_to_workspace:
+          root: my_workspace
+          paths:
+            - echo-output
+
+  two:
+    docker:
+      - image: cimg/ruby:3.0.2
+    steps:
+      - checkout
+      - attach_workspace:
+          at: my_workspace
+      - run: |
+          if [[ $(cat my_workspace/echo-output) == "Trying out workspaces" ]]; then
+            echo "It worked!";
+          else
+            echo "Workspace output mismatch";
+            exit 1;
+          fi
+
+  one_and_two:
+    runs-on: ubuntu-latest
+    needs: [one, two]
+    steps:
+      - run: echo "A more familiar hi"
